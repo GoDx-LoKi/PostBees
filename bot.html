@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PostBees</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<style>
+:root {
+  --bg: #f8f9fa;
+  /* Much more transparent for glass effect */
+  --bg-soft: rgba(255, 255, 255, 0.35); 
+  --glass-border: 1px solid rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  --glass-blur: blur(20px);
+  
+  --primary: #facc15;
+  --primary-dark: #eab308;
+  --text-main: #111827;
+  --text-muted: #4b5563; /* Slightly darker for better contrast on glass */
+  
+  --highlight-gradient: linear-gradient(135deg, rgba(254, 240, 138, 0.4), rgba(255, 255, 255, 0.1));
+  
+  /* TG Mini App Vars */
+  --tg-theme-bg: var(--bg);
+  --tg-theme-text: var(--text-main);
+  
+  /* Example Section Colors (Preserved) */
+  --tg-wrap: #0f172a;
+  --tg-bg: #0b1220;
+  --tg-panel: #2b213a;
+  --tg-border: #ec4899;
+}
+
+/* Dark Mode Overrides */
+body.dark {
+  --bg: #0f172a;
+  /* Dark glass transparency */
+  --bg-soft: rgba(15, 23, 42, 0.5);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  
+  --text-main: #f3f4f6;
+  --text-muted: #cbd5e1; /* Lighter for contrast */
+  --highlight-gradient: linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(255, 255, 255, 0.02));
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  background: var(--bg);
+  color: var(--text-main);
+  line-height: 1.5;
+  padding-bottom: 60px;
+  transition: background-color 0.3s, color 0.3s;
+  overflow-x: hidden;
+}
+
+/* Background Canvas */
+#bg-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0; 
+  pointer-events: none;
+}
+
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  position: relative;
+  z-index: 1; 
+}
+
+/* --- Global Glass Mixin --- */
+.glass-effect {
+  background: var(--bg-soft);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes pulse-soft {
+  0% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(250, 204, 21, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); }
+}
+
+/* --- Redesigned Hero --- */
+.hero-wrapper {
+  /* Using consistent glass variables but slightly lighter gradient */
+
+  padding: 60px 20px 40px;
+  border-bottom-left-radius: 40px;
+  border-bottom-right-radius: 40px;
+  margin: 0 -20px 40px;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+body.dark .hero-wrapper {
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.2) 100%);
+}
+
+.logo {
+  width: 88px; height: 88px; border-radius: 26px;
+  background: linear-gradient(135deg, #fff0b6, #fbbf24);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 18px;
+  color: #fff;
+  overflow: hidden;
+  animation: float 4s ease-in-out infinite, pulse-soft 3s infinite;
+  border: 4px solid rgba(255,255,255,0.2);
+}
+
+.logo img {
+  width: 150%;
+  height: 150%;
+  object-fit: cover;
+}
+
+.logo svg {
+  width: 52px;
+  height: 52px;
+  fill: white;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+}
+
+h1 { 
+  margin: 0; 
+  font-size: 36px; 
+  font-weight: 800; 
+  letter-spacing: -1px;
+  color: var(--text-main);
+  text-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.subtitle { 
+  margin-top: 12px; 
+  color: var(--text-muted); 
+  font-size: 17px; 
+  line-height: 1.6;
+  font-weight: 500;
+  max-width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* --- Theme Toggle --- */
+.theme-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  
+  /* Glass Effect */
+  background: var(--bg-soft);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-main);
+  transition: all 0.2s;
+}
+
+.theme-toggle:active { transform: scale(0.95); }
+.icon-sun, .icon-moon { width: 22px; height: 22px; fill: currentColor; }
+.icon-moon { display: none; }
+body.dark .icon-sun { display: none; }
+body.dark .icon-moon { display: block; }
+
+/* --- Section Headers --- */
+section { margin-bottom: 56px; }
+
+h2 { 
+  font-size: 22px; 
+  margin-bottom: 24px; 
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: -0.5px;
+}
+
+h2::before {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 24px;
+  background: linear-gradient(to bottom, var(--primary), var(--primary-dark));
+  border-radius: 4px;
+}
+
+/* --- Timeline Process Card --- */
+.process-card {
+  /* Applied Glass Effect Manually to ensure override */
+  background: var(--bg-soft);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  
+  border-radius: 28px;
+  padding: 24px;
+}
+
+.process-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  position: relative;
+}
+
+/* The Vertical Line */
+.process-list::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 10px;
+  bottom: 30px;
+  width: 2px;
+  background: rgba(200,200,200,0.5); /* slightly more visible */
+  z-index: 0;
+}
+body.dark .process-list::before { background: rgba(255,255,255,0.15); }
+
+.process-item {
+  display: flex;
+  align-items: flex-start;
+  padding-bottom: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.process-item:last-child { padding-bottom: 0; }
+
+.process-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #fef08a, #fde047);
+  color: #854d0e;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16px;
+  font-size: 14px;
+  font-weight: 800;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  border: 2px solid rgba(255,255,255,0.5); /* Transparent border */
+}
+body.dark .process-icon { border-color: rgba(255,255,255,0.1); }
+
+.process-text {
+  font-size: 16px;
+  color: var(--text-main);
+  font-weight: 500;
+  padding-top: 4px;
+}
+
+.highlight-box {
+  background: var(--highlight-gradient);
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 20px;
+  text-align: center;
+  font-size: 15px;
+  color: var(--text-main);
+  border: 1px solid rgba(250, 204, 21, 0.4);
+  font-weight: 600;
+}
+
+/* --- Customization Grid --- */
+.custom-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.custom-pill {
+  /* Applied Glass Effect */
+  background: var(--bg-soft);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  
+  padding: 16px 12px;
+  border-radius: 18px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.custom-pill:hover {
+  transform: translateY(-2px);
+  background: rgba(250, 204, 21, 0.15); /* Tint on hover */
+  border-color: rgba(250, 204, 21, 0.5);
+}
+
+.disclaimer {
+  margin-top: 16px;
+  font-size: 14px;
+  color: var(--text-muted);
+  text-align: center;
+  background: rgba(0,0,0,0.03);
+  padding: 10px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+body.dark .disclaimer { background: rgba(255,255,255,0.05); }
+
+/* --- Workflow Cards --- */
+.workflow-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 480px) {
+  .workflow-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.flow-card {
+  /* Applied Glass Effect */
+  background: var(--bg-soft);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  
+  border-radius: 24px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: all 0.3s;
+}
+
+.flow-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--primary);
+  background: linear-gradient(135deg, var(--bg-soft) 0%, rgba(250, 204, 21, 0.05) 100%);
+}
+
+.flow-icon-wrap {
+  width: 48px;
+  height: 48px;
+  background: var(--highlight-gradient);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  color: #d97706;
+}
+body.dark .flow-icon-wrap { color: #facc15; }
+
+.flow-icon-wrap svg { width: 24px; height: 24px; fill: currentColor; }
+
+.flow-title {
+  font-weight: 800;
+  font-size: 17px;
+  margin-bottom: 8px;
+  color: var(--text-main);
+}
+
+.flow-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* --- Persona List --- */
+.persona-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.persona-item {
+  /* Applied Glass Effect */
+  background: var(--bg-soft);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  
+  padding: 18px 24px;
+  border-radius: 20px;
+  font-weight: 600;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: transform 0.2s;
+}
+
+.persona-item:hover {
+  transform: translateX(5px);
+  border-color: rgba(250, 204, 21, 0.4);
+}
+
+.persona-item::after {
+  content: '→';
+  color: #d1d5db;
+  font-weight: 400;
+  transition: color 0.2s;
+}
+.persona-item:hover::after { color: var(--primary); }
+body.dark .persona-item::after { color: #6b7280; }
+
+/* ===== PRESERVED EXAMPLE SECTION STYLES ===== */
+.tg-wrapper {
+  background: var(--tg-wrap);
+  border-radius: 22px;
+  padding: 22px 14px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2); 
+}
+
+.post {
+  max-width: 640px;
+  margin: 0 auto;
+  background: var(--tg-bg);
+  border-radius: 14px;
+  padding: 18px;
+  color: #e5e7eb;
+  box-shadow: 0 14px 34px rgba(0,0,0,.45);
+}
+
+.post .title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.post .subtitle {
+  font-size: .95rem;
+  color: #cbd5f5;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.highlight {
+  background: var(--tg-panel);
+  border-left: 4px solid var(--tg-border);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.highlight-title {
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #f9a8d4;
+}
+
+.highlight ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.highlight li {
+  margin-bottom: 10px;
+  line-height: 1.5;
+  position: relative;
+  padding-left: 4px;
+}
+
+.tags {
+  margin-top: 10px;
+  font-size: .9rem;
+  color: #fb7185;
+}
+
+.footer-text {
+  margin-top: 14px;
+  font-style: italic;
+  color: #cbd5f5;
+}
+
+.credit {
+  margin-top: 14px;
+  text-align: right;
+  font-size: .85rem;
+  color: #f472b6;
+}
+
+.card-tg {
+  max-width: 720px;
+  margin: 0 auto;
+  background: var(--tg-bg);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 14px 34px rgba(0,0,0,.4);
+  color: #e5e7eb;
+}
+
+.cta-section {
+  text-align: center;
+  margin-top: 60px;
+  padding-bottom: 20px;
+}
+
+.cta-group {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+
+
+.content { padding: 18px 20px 10px; }
+
+.card-tg .title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.paragraph {
+  font-size: .95rem;
+  line-height: 1.6;
+  color: #dbeafe;
+  margin-bottom: 12px;
+}
+
+.footer {
+  padding: 0 20px 14px;
+  font-style: italic;
+  font-size: .9rem;
+  color: #c7d2fe;
+}
+.image-wrap {
+  background: #eef2ff;
+  padding: 0; /* Removed padding */
+  display: block; /* Removed flex */
+  width: 100%;
+}
+
+.image-wrap img, .image-wrap svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  /* Removed max-height and object-fit to let the image show fully without cropping */
+}
+.meta {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 20px;
+  font-size: .8rem;
+  color: #94a3b8;
+  border-top: 1px solid #1e293b;
+}
+
+.source {
+  padding: 12px 20px;
+  border-top: 1px solid #1e293b;
+  text-align: center;
+}
+
+.source a {
+  text-decoration: none;
+  color: #60a5fa;
+  font-weight: 500;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 32px;
+  border-radius: 18px;
+  font-weight: 800;
+  font-size: 16px;
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  border: none;
+}
+
+.btn:active { transform: scale(0.96); }
+
+.btn-primary {
+  background: linear-gradient(135deg, #facc15, #eab308);
+  color: #111827; /* Dark text for contrast */
+  box-shadow: 0 4px 12px rgba(234, 179, 8, 0.3);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 8px 16px rgba(234, 179, 8, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  /* Glass effect */
+  background: var(--bg-soft);
+  color: var(--text-main);
+  border: var(--glass-border);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
+}
+
+.btn-secondary:hover {
+  border-color: rgba(250, 204, 21, 0.6);
+  transform: translateY(-2px);
+}
+
+</style>
+</head>
+
+<body>
+<canvas id="bg-canvas"></canvas>
+
+<!-- Redesigned Hero Section -->
+<div class="hero-wrapper">
+  <button class="theme-toggle" id="themeBtn" aria-label="Toggle Dark Mode">
+    <!-- Sun Icon -->
+    <svg class="icon-sun" viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.29 1.29c.19.19.45.29.71.29s.51-.1 
+.71-.29a.996.996 0 000-1.41l-1.3-1.29zm12.31 12.29c-.39 0-.71.31-.71.71a.996.996 0 00.29.71l1.29 1.29c.19.19.45.29.71.29s.51-.1.71-.29a.996.996 0 000-1.41l-1.29-1.29zM19.59 5.99a.996.996 0 000-1.41c-.19-.19-.45-.29-.71-.29s-.51.1-.71.29l-1.29 1.29c-.39.39-.39 1.02 0 1.41s1.02.39 1.41 0l1.3-1.29zM7.28 18.28c-.39-.39-1.02-.39-1.41 0l-1.29 1.29a.996.996 0 000 1.41c.19.19.45.29.71.29s.51-.1.71-.29l1.29-1.29c.39-.39.39-1.02-.01-1.41z"/></svg>
+    <!-- Moon Icon -->
+    <svg class="icon-moon" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+  </button>
+  <div class="container" style="padding:0; margin:0 auto;">
+    <!-- Logo with Image/SVG -->
+    <div class="logo">
+      <img src="sticker-removebg-preview.png" alt="PostBees Logo">
+    </div>
+    <h1>PostBees</h1>
+    <div class="subtitle">
+      Smart, hands-free Telegram post automation that keeps your channel active without spam.
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- "What PostBees Does" - Converted to Vertical Timeline -->
+  <section>
+    <h2>What PostBees Does</h2>
+    <div class="process-card">
+      <div class="process-list">
+        <div class="process-item">
+          <div class="process-icon">1</div>
+          <div class="process-text">Collects fresh content from trusted sources</div>
+        </div>
+        <div class="process-item">
+          <div class="process-icon">2</div>
+          <div class="process-text">Selects the most recent update</div>
+        </div>
+        <div class="process-item">
+          <div class="process-icon">3</div>
+          <div class="process-text">Converts it into a ready-to-publish Telegram post</div>
+        </div>
+        <div class="process-item">
+          <div class="process-icon">4</div>
+          <div class="process-text">Publishes it at the chosen schedule</div>
+        </div>
+      </div>
+      <div class="highlight-box">
+        You stay hands-free while your channel stays active.
+      </div>
+    </div>
+  </section>
+
+  <!-- "Built for Customization" - Enhanced Pills -->
+  <section>
+    <h2>Built for Customization</h2>
+    <div class="custom-grid">
+      <div class="custom-pill">Post format</div>
+      <div class="custom-pill">Text length</div>
+      <div class="custom-pill">Tone control</div>
+      <div class="custom-pill">Posting frequency</div>
+      <div class="custom-pill">Source selection</div>
+      <div class="custom-pill">Button placement</div>
+    </div>
+    <div class="disclaimer">
+      No fixed template. No forced branding.
+    </div>
+  </section>
+
+  <!-- UNTOUCHED EXAMPLE SECTION (PRESERVED EXACTLY) -->
+  <section>
+    <h2>Example Telegram Posts</h2>
+
+    <div class="tg-wrapper">
+      <div class="post">
+        <div class="title">📈 Uh Oh! Asus Supplier Got Hacked!</div>
+
+        <div class="subtitle">
+          📌 A supplier of Asus got hit by ransomware, and the bad guys claim
+          to have stolen a whole bunch of data!
+        </div>
+
+        <div class="highlight">
+          <div class="highlight-title">🔑 Key Highlights:</div>
+          <ul>
+            <li>🎯 An Asus supplier got hacked by the Everest ransomware group.</li>
+            <li>📌 Hackers claim 1 TB of data was stolen, including source code and AI models.</li>
+            <li>🔷 Asus says its own systems remain unaffected.</li>
+            <li>✨ Security controls are being strengthened.</li>
+          </ul>
+          <div class="tags">🔍 #CyberSecurity #Ransomware</div>
+        </div>
+
+        <div class="footer-text">
+          📣 Looks like Asus dodged a major bullet (this time!).
+        </div>
+
+        <div class="credit">
+          ~ by @PostBees 💗
+        </div>
+      </div>
+    </div>
+
+    <div style="height:28px"></div>
+
+    <div class="tg-wrapper">
+      <div class="card-tg">
+         <div class="image-wrap">
+          <!-- User requested image field instead of SVG -->
+          <img src="image.png" alt="Your Image" />
+         </div>
+
+        <div class="content">
+          <div class="title">
+            Emergency Location Service Now Available
+          </div>
+
+          <div class="paragraph">
+            Android users can now automatically share precise location details
+            with emergency responders during critical situations.
+          </div>
+
+          <div class="paragraph">
+            This improves response times when communication is limited.
+          </div>
+        </div>
+
+        <div class="footer">~ Posted By: @PostBees</div>
+
+        <div class="meta">
+          <div>👁️ 41</div>
+          <div>edited</div>
+        </div>
+
+        <div class="source">
+          <a href="#">🔗 Source</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- "Workflow & Reliability" - Enhanced with Visual Icons -->
+  <section>
+    <h2>Workflow & Reliability</h2>
+    <div class="workflow-grid">
+      <div class="flow-card">
+        <div class="flow-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98 0-.34-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98 0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+        </div>
+        <div class="flow-title">Simple Setup</div>
+        <div class="flow-desc">Choose content type and preferences once.</div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.55-2.54l-1.1-.1c-.35-.03-.66-.23-.83-.55L9.1 13.7c-.15-.29-.07-.65.19-.85l.79-.6c.26-.2.62-.16.82.1.2.26.16.62-.1.82l-.01.01c-.13.1-.19.27-.13.43l1.19 2.5c.09.18.29.28.49.25l.48-.07c.23-.03.45.12.48.36.04.22-.11.43-.33.47l-.54.08zM15 9c0 1.66-1.34 3-3 3s-3-1.34-3-3 1.34-3 3-3 3 1.34 3 3z"/></svg>
+        </div>
+        <div class="flow-title">Fully Automated</div>
+        <div class="flow-desc">Posts are handled end-to-end without intervention.</div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M4.34 2.93L2.93 4.34 7.29 8.7 7 9H3v6h4l5 5v-6.59l4.18 4.18c-.65.49-1.38.88-2.18 1.11v2.06a8.94 8.94 0 003.61-1.75l2.05 2.05 1.41-1.41L4.34 2.93zM10 15.17L7.83 13H5v-2h2.83l.88-.88L10 11.41v3.76zM19 12c0 .82-.15 1.61-.41 2.34l1.53 1.53c.56-1.17.88-2.48.88-3.87 0-3.83-2.4-7.11-5.78-8.4v2.06c2.31 1.11 3.94 3.46 3.94 6.34zm-9-7H9.17l1 1L12 4.17V2.5l-2 2.5zM16.5 12c0-1.77-1.02-3.29-2.5-4.03v1.79l2.48 2.48c.01-.08.02-.16.02-.24z"/></svg>
+        </div>
+        <div class="flow-title">Noise-Free</div>
+        <div class="flow-desc">Only meaningful, non-repetitive updates.</div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+        </div>
+        <div class="flow-title">Long-Term Stable</div>
+        <div class="flow-desc">Designed for continuous, reliable operation.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- "Who Is PostBees For?" - Enhanced List -->
+  <section>
+    <h2>Who Is PostBees For?</h2>
+    <div class="persona-list">
+      <div class="persona-item">Telegram channel owners</div>
+      <div class="persona-item">News & tech update channels</div>
+      <div class="persona-item">Curated content publishers</div>
+      <div class="persona-item">Anyone who wants automation without complexity</div>
+    </div>
+  </section>
+
+ <!-- CTA Section -->
+  <section class="cta-section">
+    <h2>Have Questions?</h2>
+    <div class="cta-group">
+      <a href="https://t.me/PostBeesSupport" class="btn btn-primary">
+        Contact Support
+      </a>
+    </div>
+  </section>
+</div>
+
+<script>
+  // Simple Theme Toggle Logic
+  const toggleBtn = document.getElementById('themeBtn');
+  const body = document.body;
+
+  // Check local storage or system preference
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'dark') {
+    body.classList.add('dark');
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    body.classList.toggle('dark');
+    // Save preference
+    if (body.classList.contains('dark')) {
+      localStorage.setItem('theme', 'dark');
+    } else {
+      localStorage.setItem('theme', 'light');
+    }
+  });
+
+  // Background Animation
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  const particleCount = 45; 
+  let width, height;
+  let mouse = { x: null, y: null };
+
+  function resize() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+    initParticles();
+  }
+
+  class Particle {
+    constructor() {
+      this.x = Math.random() * width;
+      this.y = Math.random() * height;
+      this.vx = (Math.random() - 0.5) * 0.8;
+      this.vy = (Math.random() - 0.5) * 0.8;
+      this.size = Math.random() * 2 + 1;
+    }
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      
+      if (this.x < 0 || this.x > width) this.vx *= -1;
+      if (this.y < 0 || this.y > height) this.vy *= -1;
+
+      if (mouse.x != null) {
+        let dx = mouse.x - this.x;
+        let dy = mouse.y - this.y;
+        let distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < 200) {
+            this.x += dx * 0.01;
+            this.y += dy * 0.01;
+        }
+      }
+    }
+    draw(color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function initParticles() {
+    particles = [];
+    for (let i = 0; i < particleCount; i++) {
+      particles.push(new Particle());
+    }
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, width, height);
+    
+    const isDark = body.classList.contains('dark');
+    const particleColor = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)';
+    const lineColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+
+    particles.forEach((p, index) => {
+      p.update();
+      p.draw(particleColor);
+      
+      for (let j = index + 1; j < particles.length; j++) {
+        const p2 = particles[j];
+        const dx = p.x - p2.x;
+        const dy = p.y - p2.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        
+        if (dist < 120) {
+          ctx.strokeStyle = lineColor;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+        }
+        
+        if (mouse.x != null) {
+             const mdx = p.x - mouse.x;
+             const mdy = p.y - mouse.y;
+             const mdist = Math.sqrt(mdx*mdx + mdy*mdy);
+             if (mdist < 150) {
+                ctx.strokeStyle = lineColor;
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(mouse.x, mouse.y);
+                ctx.stroke();
+             }
+        }
+      }
+    });
+    requestAnimationFrame(animate);
+  }
+
+  window.addEventListener('resize', resize);
+  window.addEventListener('mousemove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+  });
+  window.addEventListener('mouseout', () => {
+      mouse.x = null;
+      mouse.y = null;
+  })
+
+  resize();
+  animate();
+</script>
+</body>
+</html>
