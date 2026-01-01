@@ -338,13 +338,17 @@ body.dark .disclaimer { background: rgba(255,255,255,0.05); }
 /* --- Workflow Cards --- */
 .workflow-grid {
   display: grid;
-  gap: 16px;
-  grid-template-columns: 1fr;
+  gap: 12px; /* Tighter gap for mobile */
+  grid-template-columns: repeat(2, 1fr); /* Force 2 columns (2x2 matrix) */
 }
 
 @media (min-width: 480px) {
-  .workflow-grid { grid-template-columns: 1fr 1fr; }
+  .workflow-grid { 
+    gap: 16px; 
+    /* grid-template-columns: 1fr 1fr; is already set by repeat(2, 1fr) above */
+  }
 }
+
 
 .flow-card {
   /* Applied Glass Effect */
@@ -832,7 +836,7 @@ body.dark .persona-item::after { color: #6b7280; }
   <section class="cta-section">
     <h2>Have Questions?</h2>
     <div class="cta-group">
-      <a href="https://t.me/PostBeesSupport" class="btn btn-primary">
+      <a href="https://t.me/PostBees_services" class="btn btn-primary">
         Contact Support
       </a>
     </div>
@@ -975,3 +979,4 @@ body.dark .persona-item::after { color: #6b7280; }
 </body>
 
 </html>
+
